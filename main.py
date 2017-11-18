@@ -1,4 +1,7 @@
 import datetime
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+import smtplib
 import sys
 import time
 import unicodedata
@@ -79,7 +82,7 @@ def print_classes(classes):
         
         # pretty print
         for i in range(max_len):
-            log('%12s  %15s  %3s  %22s  %5s  %3s  %4s  %15s  %7s  %7s  %15s' % (
+            print('%12s  %15s  %3s  %22s  %5s  %3s  %4s  %15s  %7s  %7s  %15s' % (
                 get(cls, 'Class', i), get(cls, 'Title', i), get(cls, 'Credits', i), get(cls, 'Type', i), get(cls, 'Seats', i), get(cls, 'Building', i), get(cls, 'Room', i), get(cls, 'Day', i), get(cls, 'Start', i), get(cls, 'Stop', i), get(cls, 'Notes', i)
             ))
 
@@ -103,7 +106,8 @@ def read_file():
 def save_file(soup):
     file = open('classes.data', 'a')
     data = get_user_input(soup)
-    line = '%s;%s;%s;%s;%s;%s\n' % (data[0][0], data[0][1], data[1], data[2], data[3], data[4])
+    email = input('Enter your email: ')
+    line = '%s;%s;%s;%s;%s;%s;%s\n' % (data[0][0], data[0][1], data[1], data[2], data[3], data[4], email)
     file.write(line)
     file.close()
     
@@ -154,24 +158,23 @@ def manual_search(soup, verbose):
     print_classes(classes)
 
 def display_menu():
-    log('1. Search classes')
-    log('2. Show only available classes')
-    log('3. Show all classes')
-    log('4. Read from file')
-    log('5. Save to file')
-    log('0. Quit\n')
+    print('1. Search classes')
+    print('2. Show only available classes')
+    print('3. Show all classes')
+    print('4. Read from file')
+    print('5. Save to file')
+    print('0. Quit\n')
 
 def menu():
     verbose = True
     try:
         main_soup = BeautifulSoup(requests.get(main_url).text, "html.parser")
     except:
-        log('Connectivity problem')
+        print('Connectivity problem')
         return
     while (True):
         display_menu()
         choice = input('Enter your choice: ')
-        log('%s entered' % choice)
         if choice == '1':
             manual_search(main_soup, verbose)
         elif choice == '2':
@@ -187,31 +190,46 @@ def menu():
         elif choice in ['run', 'main']:
             main()
         else:
-            log('\nInvalid Choice')
-        log()
+            print('\nInvalid Choice')
+        print()
 
 def main():
+    log('%s\nRunning on %s\n%s' % ('-' * 30, datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S'), '-' * 30))
     file = open('classes.data', 'r')
     dels = []
+    
+    fromaddr = "usama8800@gmail.com"
+    server = smtplib.SMTP('smtp.gmail.com', 587)
+    server.ehlo()
+    server.starttls()
+    server.ehlo()
+    server.login("usama8800@gmail.com", "nqfkaexanhjlbwcw")
     for i, line in enumerate(file.readlines()):
         fields = line[:-1].split(';')
         classes = search_classes([[fields[0], fields[1]], fields[2], fields[3], fields[4], fields[5]])
-        print_classes(classes)
+        toaddr = fields[6]
         for cls in classes:
             seats = get(cls, 'Seats')[0]
             if get(cls, 'Class') == 'Class':
                 continue
+            log('Searching %s' % get(cls, 'Class'))
             if seats != '0':
-                log('Someone left %s!' % get(cls, 'Class') + '\n\n%s has now %s %s left\nHurry up and join!' % (get(cls, 'Class'), seats, 'seat' if seats == '1' else 'seats'))
+                msg = MIMEMultipart()
+                msg['From'] = fromaddr
+                msg['To'] = toaddr
+                msg['Subject'] = 'Someone left %s!' % get(cls, 'Class')
+                body = '%s has now %s %s left<br><h5>Hurry up and join!</h5>' % (get(cls, 'Class'), seats, 'seat' if seats == '1' else 'seats')
+                msg.attach(MIMEText(body, 'html'))
+                if toaddr != '':
+                    server.sendmail(fromaddr, toaddr, msg.as_string())
+                log('********** %s Open **********' % get(cls, 'Class'))
                 send_notification('Someone left %s!' % get(cls, 'Class'), '%s has now %s %s left<br><h5>Hurry up and join!</h5>' % (get(cls, 'Class'), seats, 'seat' if seats == '1' else 'seats'))
+                
                 dels.append(i)
                 break
-    if len(dels) == 0:
-        log('No class was empty')
     delete_entrys(dels)
 
 
-log('%s\nRunning on %s\n%s' % ('-' * 30, datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S'), '-' * 30))
 if __name__ == '__main__':
     if 'run' in sys.argv or 'main' in sys.argv:
         main()
