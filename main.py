@@ -2,6 +2,7 @@ import datetime
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 import smtplib
+import socket
 import sys
 import time
 import unicodedata
@@ -50,7 +51,6 @@ def search_classes(class_info, verbose=True):
                 record.append(td)  # Add field to record
             if len(record) == 12 and (i != 0 or section == ''):  # Don't add the rows which are not classes and don't add the header row for second page
                 data.append(record) 
-            
         # Checks if we need to go to the next page for more classes and filter the classes
         done = True
         for record in data:
@@ -86,13 +86,9 @@ def print_classes(classes):
                 get(cls, 'Class', i), get(cls, 'Title', i), get(cls, 'Credits', i), get(cls, 'Type', i), get(cls, 'Seats', i), get(cls, 'Building', i), get(cls, 'Room', i), get(cls, 'Day', i), get(cls, 'Start', i), get(cls, 'Stop', i), get(cls, 'Notes', i)
             ))
 
-def send_notification(subject, body):
-    values = {'value1': subject, 'value2': body}
-    requests.post('https://maker.ifttt.com/trigger/bu_classes/with/key/cRgXp2jhui9yGMo3LzzgG', data=values)
-
 def read_file():
     try:
-        file = open('classes.data', 'r')
+        file = open('classes.txt', 'r')
     except FileNotFoundError:
         return
     for line in file.readlines():
@@ -100,11 +96,10 @@ def read_file():
         fields = line.split(';')
         classes = search_classes([[fields[0], fields[1]], fields[2], fields[3], fields[4], fields[5]])
         print_classes(classes)
-        log('\n')
     file.close()
-        
+
 def save_file(soup):
-    file = open('classes.data', 'a')
+    file = open('classes.txt', 'a')
     data = get_user_input(soup)
     email = input('Enter your email: ')
     line = '%s;%s;%s;%s;%s;%s;%s\n' % (data[0][0], data[0][1], data[1], data[2], data[3], data[4], email)
@@ -112,12 +107,12 @@ def save_file(soup):
     file.close()
     
 def delete_entrys(lst):
-    file = open('classes.data', 'r')
+    file = open('classes.txt', 'r')
     lines = file.readlines()
     for v in lst:
         del lines[v]
     file.close()
-    file = open('classes.data', 'w')
+    file = open('classes.txt', 'w')
     file.writelines(lines)
 
 def get_user_input(soup):
@@ -126,16 +121,18 @@ def get_user_input(soup):
     sem_values = []
     for sem in sem_list:
         sem_values.append([sem[sem.index('"') + 1:sem.rindex('"')] , sem[sem.index('>') + 1:]])
-    log('Semester:')
+    if len(sem_list) == 0:
+        raise BaseException('No Semester available')
+    print('Semester:')
     for i, v in enumerate(sem_values):
-        log('%d. %s' % (i + 1, v[1]))
+        print('%d. %s' % (i + 1, v[1]))
         
     while True:
         sem_index = input('Semester (integer): ')
         if not sem_index.isdecimal():
             continue
         sem_index = int(sem_index) - 1
-        if sem_index < 1 or sem_index > len(sem_values):
+        if sem_index < 0 or sem_index >= len(sem_values):
             continue
         break
     while True:
@@ -167,11 +164,7 @@ def display_menu():
 
 def menu():
     verbose = True
-    try:
-        main_soup = BeautifulSoup(requests.get(main_url).text, "html.parser")
-    except:
-        print('Connectivity problem')
-        return
+    main_soup = BeautifulSoup(requests.get(main_url).text, "html.parser")
     while (True):
         display_menu()
         choice = input('Enter your choice: ')
@@ -195,7 +188,7 @@ def menu():
 
 def main():
     log('%s\nRunning on %s\n%s' % ('-' * 30, datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S'), '-' * 30))
-    file = open('classes.data', 'r')
+    file = open('classes.txt', 'r')
     dels = []
     
     fromaddr = "usama8800@gmail.com"
@@ -203,7 +196,7 @@ def main():
     server.ehlo()
     server.starttls()
     server.ehlo()
-    server.login("usama8800@gmail.com", "nqfkaexanhjlbwcw")
+    server.login(fromaddr, "nqfkaexanhjlbwcw")
     for i, line in enumerate(file.readlines()):
         fields = line[:-1].split(';')
         classes = search_classes([[fields[0], fields[1]], fields[2], fields[3], fields[4], fields[5]])
@@ -222,18 +215,30 @@ def main():
                 msg.attach(MIMEText(body, 'html'))
                 if toaddr != '':
                     server.sendmail(fromaddr, toaddr, msg.as_string())
+                msg = MIMEMultipart()
+                msg['From'] = fromaddr
+                msg['To'] = fromaddr
+                msg['Subject'] = 'Someone left %s!' % get(cls, 'Class')
+                body = 'Email sent to %s' % toaddr
+                msg.attach(MIMEText(body, 'html'))
+                server.sendmail(fromaddr, fromaddr, msg.as_string())
                 log('********** %s Open **********' % get(cls, 'Class'))
-                send_notification('Someone left %s!' % get(cls, 'Class'), '%s has now %s %s left<br><h5>Hurry up and join!</h5>' % (get(cls, 'Class'), seats, 'seat' if seats == '1' else 'seats'))
                 
                 dels.append(i)
                 break
     delete_entrys(dels)
 
-
-if __name__ == '__main__':
-    if 'run' in sys.argv or 'main' in sys.argv:
-        main()
+try:
+    if __name__ == '__main__':
+        if 'run' in sys.argv or 'main' in sys.argv:
+            main()
+        else:
+            menu()
     else:
-        menu()
-else:
-    main()
+        main()
+except (requests.ConnectionError, socket.gaierror) as e:
+    log('Connectivity problem')
+except Exception as e:
+    log("Unexpected error: %s" % sys.exc_info()[0])
+    print(e)
+
