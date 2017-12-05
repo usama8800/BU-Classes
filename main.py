@@ -10,16 +10,18 @@ import unicodedata
 from bs4 import BeautifulSoup
 import requests
 
-
 main_url = "https://www.bu.edu/link/bin/uiscgi_studentlink.pl/uismpl/1204835367?ModuleName=univschs.pl"
 search_url = "https://www.bu.edu/link/bin/uiscgi_studentlink.pl/1510675812?ModuleName=univschr.pl&SearchOptionDesc=Class+Number&SearchOptionCd=S&KeySem=%s&ViewSem=%s&College=%s&Dept=%s&Course=%s&Section=%s&MainCampusInd=%s"
-indexes = {'Class': 0, 'Title': 1, 'Credits': 3, 'Type': 4, 'Seats': 5, 'Building': 6, 'Room': 7, 'Day': 8, 'Start': 9, 'Stop': 10, 'Notes': 11}
+indexes = {'Class': 0, 'Title': 1, 'Credits': 3, 'Type': 4, 'Seats': 5, 'Building': 6, 'Room': 7, 'Day': 8, 'Start': 9,
+           'Stop': 10, 'Notes': 11}
+
 
 def log(arg=''):
     print(arg)
     file = open('log.txt', 'a')
     file.write(arg + '\n')
-    file.close()    
+    file.close()
+
 
 def get(record, index, i=-1):
     if i == -1:
@@ -30,32 +32,40 @@ def get(record, index, i=-1):
         return record[indexes[index]][i]
     return ''
 
+
 def search_classes(class_info, verbose=True):
     section = class_info[4]
     crco = 'N'
     data = []
     while True:
         info = []
-        custom_url = search_url % (class_info[0][0], class_info[0][1], class_info[1], class_info[2], class_info[3], section, crco)  # Create the custom URL with the user values
-        soup = BeautifulSoup(str(requests.get(custom_url).text), "html.parser")  # Get the text from the URL and parse it
-        soup = BeautifulSoup(str(soup.find_all('table')[5]), "html.parser")  # Parse the 6th table which contains the class list
+        custom_url = search_url % (
+            class_info[0][0], class_info[0][1], class_info[1], class_info[2], class_info[3], section,
+            crco)  # Create the custom URL with the user values
+        soup = BeautifulSoup(str(requests.get(custom_url).text),
+                             "html.parser")  # Get the text from the URL and parse it
+        soup = BeautifulSoup(str(soup.find_all('table')[5]),
+                             "html.parser")  # Parse the 6th table which contains the class list
         for i, tr in enumerate(soup.find_all('tr')):
             record = []
             for j, td in enumerate(tr.find_all(['td', 'th'])):
                 if j == 0:  # First item is always empty
                     continue
-                td = str(td.get_text(separator=';', strip=True))  # gets the text with ; in between if there is more than one line
+                td = str(td.get_text(separator = ';',
+                                     strip = True))  # gets the text with ; in between if there is more than one line
                 td = unicodedata.normalize("NFKD", td)  # Convert the unicode characters to utf-8
                 td = td.split(';')  # Split the td into lines
                 td = [item for item in td if str(item)]  # Get rid of empty strings
                 record.append(td)  # Add field to record
-            if len(record) == 12 and (i != 0 or section == ''):  # Don't add the rows which are not classes and don't add the header row for second page
-                data.append(record) 
-        # Checks if we need to go to the next page for more classes and filter the classes
+            if len(record) == 12 and (
+                    i != 0 or section == ''):  # Don't add the rows which are not classes and don't add the header row for second page
+                data.append(record)
+                # Checks if we need to go to the next page for more classes and filter the classes
         done = True
         for record in data:
             cls = get(record, 'Class')  # Get the class - CAS CS112 A1
-            if (class_info[2] not in cls or class_info[3] not in cls or (class_info[4] != '' and class_info[4] not in cls[-2:])) and cls != 'Class':
+            if (class_info[2] not in cls or class_info[3] not in cls or (
+                    class_info[4] != '' and class_info[4] not in cls[-2:])) and cls != 'Class':
                 done = True
             else:
                 done = False
@@ -67,8 +77,9 @@ def search_classes(class_info, verbose=True):
                 section = cls[-2:]  # Change section for the next page
         if done:
             break
-    
+
     return info
+
 
 def print_classes(classes):
     for cls in classes:
@@ -79,12 +90,15 @@ def print_classes(classes):
                 continue
             if len(field) > max_len:
                 max_len = len(field)
-        
+
         # pretty print
         for i in range(max_len):
             print('%12s  %15s  %3s  %22s  %5s  %3s  %4s  %15s  %7s  %7s  %15s' % (
-                get(cls, 'Class', i), get(cls, 'Title', i), get(cls, 'Credits', i), get(cls, 'Type', i), get(cls, 'Seats', i), get(cls, 'Building', i), get(cls, 'Room', i), get(cls, 'Day', i), get(cls, 'Start', i), get(cls, 'Stop', i), get(cls, 'Notes', i)
-            ))
+                get(cls, 'Class', i), get(cls, 'Title', i), get(cls, 'Credits', i), get(cls, 'Type', i),
+                get(cls, 'Seats', i), get(cls, 'Building', i), get(cls, 'Room', i), get(cls, 'Day', i),
+                get(cls, 'Start', i), get(cls, 'Stop', i), get(cls, 'Notes', i)
+                ))
+
 
 def read_file():
     try:
@@ -98,6 +112,7 @@ def read_file():
         print_classes(classes)
     file.close()
 
+
 def save_file(soup):
     file = open('classes.txt', 'a')
     data = get_user_input(soup)
@@ -105,7 +120,8 @@ def save_file(soup):
     line = '%s;%s;%s;%s;%s;%s;%s\n' % (data[0][0], data[0][1], data[1], data[2], data[3], data[4], email)
     file.write(line)
     file.close()
-    
+
+
 def delete_entrys(lst):
     file = open('classes.txt', 'r')
     lines = file.readlines()
@@ -115,18 +131,19 @@ def delete_entrys(lst):
     file = open('classes.txt', 'w')
     file.writelines(lines)
 
+
 def get_user_input(soup):
-    sem_list = str(soup.find('select', attrs={'name':'SemList'})).split('<option ')[2:]
+    sem_list = str(soup.find('select', attrs = {'name': 'SemList'})).split('<option ')[2:]
     sem_list = [x[:x.index('\n') if '\n' in x else len(x)] for x in sem_list]
     sem_values = []
     for sem in sem_list:
-        sem_values.append([sem[sem.index('"') + 1:sem.rindex('"')] , sem[sem.index('>') + 1:]])
+        sem_values.append([sem[sem.index('"') + 1:sem.rindex('"')], sem[sem.index('>') + 1:]])
     if len(sem_list) == 0:
         raise BaseException('No Semester available')
     print('Semester:')
     for i, v in enumerate(sem_values):
         print('%d. %s' % (i + 1, v[1]))
-        
+
     while True:
         sem_index = input('Semester (integer): ')
         if not sem_index.isdecimal():
@@ -149,10 +166,12 @@ def get_user_input(soup):
             break
     section = input('Section (optional): ').upper()
     return [sem_values[sem_index], college, dept, course, section]
-    
+
+
 def manual_search(soup, verbose):
     classes = search_classes(get_user_input(soup), verbose)
     print_classes(classes)
+
 
 def display_menu():
     print('1. Search classes')
@@ -162,10 +181,11 @@ def display_menu():
     print('5. Save to file')
     print('0. Quit\n')
 
+
 def menu():
     verbose = True
     main_soup = BeautifulSoup(requests.get(main_url).text, "html.parser")
-    while (True):
+    while True:
         display_menu()
         choice = input('Enter your choice: ')
         if choice == '1':
@@ -186,11 +206,13 @@ def menu():
             print('\nInvalid Choice')
         print()
 
+
 def main():
-    log('%s\nRunning on %s\n%s' % ('-' * 30, datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S'), '-' * 30))
+    log('%s\nRunning on %s\n%s' % (
+        '-' * 30, datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S'), '-' * 30))
     file = open('classes.txt', 'r')
     dels = []
-    
+
     fromaddr = "usama8800@gmail.com"
     server = smtplib.SMTP('smtp.gmail.com', 587)
     server.ehlo()
@@ -205,13 +227,16 @@ def main():
             seats = get(cls, 'Seats')[0]
             if get(cls, 'Class') == 'Class':
                 continue
-            log('Searching %s' % get(cls, 'Class'))
-            if seats != '0':
+
+            if seats == '0':
+                log('No seats free in %s' % get(cls, 'Class'))
+            else:
                 msg = MIMEMultipart()
                 msg['From'] = fromaddr
                 msg['To'] = toaddr
                 msg['Subject'] = 'Someone left %s!' % get(cls, 'Class')
-                body = '%s has now %s %s left<br><h5>Hurry up and join!</h5>' % (get(cls, 'Class'), seats, 'seat' if seats == '1' else 'seats')
+                body = '%s has now %s %s left<br><h5>Hurry up and join!</h5>' % (
+                    get(cls, 'Class'), seats, 'seat' if seats == '1' else 'seats')
                 msg.attach(MIMEText(body, 'html'))
                 if toaddr != '':
                     server.sendmail(fromaddr, toaddr, msg.as_string())
@@ -223,10 +248,11 @@ def main():
                 msg.attach(MIMEText(body, 'html'))
                 server.sendmail(fromaddr, fromaddr, msg.as_string())
                 log('********** %s Open **********' % get(cls, 'Class'))
-                
+
                 dels.append(i)
                 break
     delete_entrys(dels)
+
 
 try:
     if __name__ == '__main__':
@@ -241,4 +267,3 @@ except (requests.ConnectionError, socket.gaierror) as e:
 except Exception as e:
     log("Unexpected error: %s" % sys.exc_info()[0])
     print(e)
-
