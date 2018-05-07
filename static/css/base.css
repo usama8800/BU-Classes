@@ -1,0 +1,21 @@
+:root {
+    --light-green: #d4dcbe;
+    --light-blue: #bccacb;
+    --nice-orange: #e15a35;
+    --normal: #f8f9fa;
+}
+
+nav ol {
+    background: linear-gradient(to top, var(--dark), #1d2023);
+    border-radius: 0;
+    color: var(--normal);
+}
+
+a {
+    color: #91a8c0;
+}
+
+a:hover {
+    text-decoration: none;
+    color: #417fc2;
+}

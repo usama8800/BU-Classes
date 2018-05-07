@@ -1,0 +1,22 @@
+# extends 'base.html'
+
+# block head
+{{ super() }}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/activate.css') }}"/>
+# endblock
+
+# block breadcrumb
+{% with name="Home", link="index" %}
+	{% include "breadcrumb.html" %}
+{% endwith %}
+{% with active=True, name="Activation" %}
+	{% include "breadcrumb.html" %}
+{% endwith %}
+# endblock
+
+# block body
+<div class="message">
+	Email sent to <span class="em">{{ username }}@bu.edu</span><br>
+	<a href= {{ url_for('index') }}>Click here</a> to go back to home
+</div>
+# endblock

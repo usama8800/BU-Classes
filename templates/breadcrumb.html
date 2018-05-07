@@ -1,0 +1,3 @@
+<li class="breadcrumb-item" {% if active %}active aria-current="page" {% endif %}>
+	{% if link %}<a href="{{ url_for(link) }}">{% endif %}{{ name }}{% if link %}</a>{% endif %}
+</li>

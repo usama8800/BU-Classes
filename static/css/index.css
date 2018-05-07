@@ -1,0 +1,39 @@
+.main-heading {
+    text-align: center;
+    margin-top: 5%;
+    font-size: 3.5rem;
+    color: var(--light-green);
+}
+
+.main-heading a {
+    color: var(--light-green);
+}
+
+.form {
+    width: 20%;
+    margin-left: 40%;
+    color: var(--light-blue);
+}
+
+.form-error {
+    background-color: #ffaaa1;
+    padding: 0.4rem 0.9rem;
+    border-radius: 5px;
+    color: orangered;
+}
+
+[type=submit], [type=submit]:hover {
+    background-color: var(--nice-orange);
+    border-color: orangered;
+}
+
+input:focus {
+    outline: none !important;
+    border-color: var(--nice-orange) !important;
+    box-shadow: 0 0 5px var(--nice-orange) !important;
+}
+
+.form-group {
+    overflow: hidden;
+}
+
