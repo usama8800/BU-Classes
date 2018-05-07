@@ -3,3 +3,5 @@
 log.txt
 classes.txt
 .idea
+sqldatabase.db
+*.pyc
