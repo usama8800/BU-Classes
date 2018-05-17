@@ -3,48 +3,109 @@
 # block head
 {{ super() }}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/username.css') }}"/>
+<script src="{{ url_for('static', filename='js/username.js') }}"></script>
 # endblock
 
 # block breadcrumb
 {% with name="Home", link="index" %}
 	{% include "breadcrumb.html" %}
 {% endwith %}
-{% with active=True, name="List of Classes" %}
+{% with active=True, name=name %}
 	{% include "breadcrumb.html" %}
 {% endwith %}
 # endblock
 
+{% block logout %}
+	{% include "logout.html" %}
+{% endblock %}
+
 # block body
 <div class="name"><span>{{ name }}</span></div>
 <br>
-<table class="classes">
-	<tr>
-		<th>Class</th>
-		<th>Title<br>/Instructor</th>
-		<th>Cr<br>Hrs</th>
-		<th>Type</th>
-		<th>Open<br>Seats</th>
-		<th>Bld</th>
-		<th>Room</th>
-		<th>Day</th>
-		<th>Start</th>
-		<th>Stop</th>
-		<th>Notes</th>
-	</tr>
-	# for sec in classes
-	<tr>
-		# for i in [0, 1, 3, 4, 5, 6, 7, 8, 9, 10, 11]
-		<td>{{ sec[i][0] }}
-			# if sec[i][1]
-			<br>{{ sec[i][1] }}
-			# endif
-		</td>
+<form action="{{ url_for('remove_class') }}" method="POST" id="remove-form">
+	<table class="classes">
+		<tr>
+			<th>Class</th>
+			<th>Title<br>/Instructor</th>
+			<th>Cr<br>Hrs</th>
+			<th>Type</th>
+			<th>Open<br>Seats</th>
+			<th>Bld</th>
+			<th>Room</th>
+			<th>Day</th>
+			<th>Start</th>
+			<th>Stop</th>
+			<th>Notes</th>
+			{#			<th><input></th>#}
+		</tr>
+		# for sec in classes
+		<tr>
+			# for i in [0, 1, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+			<td>{{ sec[i][0] }}
+				# if sec[i][1]
+				<br>{{ sec[i][1] }}
+				# endif
+			</td>
+			# endfor
+			<td class="ttip">
+				<input type="checkbox" name="class_id" value="{{ sec[12] }}"/>
+				<span class="ttip-text">Remove</span>
+			</td>
+		</tr>
 		# endfor
-	</tr>
-	# endfor
-</table>
+	</table>
+	<div class="name">
+		<button id="remove-button" class="btn btn-primary">Remove selected</button>
+	</div>
+</form>
 <br>
-<form>
-	{#	TODO: Make form to add classes #}
+<br>
+<form action="{{ url_for('add_class') }}" id="add-class-form">
+	<div id="add-class-group" class="center">
+		<select name="semester" class="custom-select" required>
+			<option value="" selected disabled>Semester...</option>
+			<option value="20184">SPRG 18</option>
+			<option value="20191">SUM1 18</option>
+			<option value="20192">SUM2 18</option>
+			<option value="20193">FALL 18</option>
+		</select>
+		<select name="college" class="custom-select" required>
+			<option value="" selected disabled>College ...</option>
+			<option value="BUA">BUA</option>
+			<option value="CAS">CAS</option>
+			<option value="CFA">CFA</option>
+			<option value="CGS">CGS</option>
+			<option value="COM">COM</option>
+			<option value="ENG">ENG</option>
+			<option value="EOP">EOP</option>
+			<option value="FRA">FRA</option>
+			<option value="GMS">GMS</option>
+			<option value="GRS">GRS</option>
+			<option value="HUB">HUB</option>
+			<option value="KHC">KHC</option>
+			<option value="LAW">LAW</option>
+			<option value="MED">MED</option>
+			<option value="MET">MET</option>
+			<option value="OTP">OTP</option>
+			<option value="PDP">PDP</option>
+			<option value="QST">QST</option>
+			<option value="SAR">SAR</option>
+			<option value="SDM">SDM</option>
+			<option value="SED">SED</option>
+			<option value="SHA">SHA</option>
+			<option value="SPH">SPH</option>
+			<option value="SSW">SSW</option>
+			<option value="STH">STH</option>
+			<option value="UNI">UNI</option>
+			<option value="XAS">XAS</option>
+			<option value="XRG">XRG</option>
+		</select>
+		<input name="department" type="text" placeholder="Department" required class="form-control"/>
+		<input name="course" type="text" placeholder="Course" required class="form-control"/>
+		<input name="section" type="text" placeholder="Section (Optional)" class="form-control"/>
+	</div>
+	<div class="center">
+		<button class="btn btn-primary">Add Class</button>
+	</div>
 </form>
 # endblock

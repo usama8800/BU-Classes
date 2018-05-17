@@ -7,20 +7,25 @@
   		$SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
         // @formatter:on
 	</script>
-	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css"
+	<link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}"
 		  integrity="sha384-WskhaSGFgHYWDcbwN70/dfYBj47jz9qbsMId/iRN3ewGhXQFZCSftd1LZCfmhktB" crossorigin="anonymous">
-	<link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}"/>
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
 	<script src="{{ url_for('static', filename='js/plugins/jquery-ui.min.js') }}"></script>
+	<script src="{{ url_for('static', filename='js/base.js') }}"></script>
 	<title>{% block title %}{% endblock %}BU Classes</title>
+	<link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}"/>
 	# endblock
 </head>
 <body class="bg-dark">
-<nav aria-label="breadcrumb">
-	<ol class="breadcrumb">
-		{% block breadcrumb %}{% endblock %}
-	</ol>
-</nav>
+<div class="navbar">
+	<nav aria-label="breadcrumb" class="breadcrumb-group">
+		<ol class="breadcrumb">
+			{% block breadcrumb %}{% endblock %}
+		</ol>
+	</nav>
+	{% block logout %}
+	{% endblock %}
+</div>
 # block body
 # endblock
 </body>

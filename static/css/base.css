@@ -1,21 +1,78 @@
 :root {
-    --light-green: #d4dcbe;
-    --light-blue: #bccacb;
-    --nice-orange: #e15a35;
-    --normal: #f8f9fa;
+	--light-green: #D4DCBE;
+	--light-blue: #BCCACB;
+	--lighter-nice-orange: #FF6412;
+	--nice-orange: #E15A35;
+	--darker-nice-orange: #C94D2D;
+	--normal: #F8F9FA;
 }
 
-nav ol {
-    background: linear-gradient(to top, var(--dark), #1d2023);
-    border-radius: 0;
-    color: var(--normal);
+::selection {
+	background-color: var(--lighter-nice-orange);
+}
+
+.navbar {
+	background: linear-gradient(to top, var(--dark), #1D2023);
+	border-radius: 0;
+	color: var(--normal);
+}
+
+nav * {
+	background: transparent !important;
+}
+
+.right-navs {
+	padding: .75rem 1rem;
+	margin-bottom: 1rem;
 }
 
 a {
-    color: #91a8c0;
+	color: #91A8C0;
 }
 
 a:hover {
-    text-decoration: none;
-    color: #417fc2;
+	text-decoration: none;
+	color: #417FC2;
+}
+
+.btn-primary, .btn-primary:hover, .btn-primary:focus {
+	background-color: var(--nice-orange);
+	border-color: var(--nice-orange);
+}
+
+.btn-primary:active {
+	background-color: var(--darker-nice-orange) !important;
+	border-color: var(--nice-orange) !important;
+}
+
+button:focus, button:active {
+	outline: none !important;
+	box-shadow: none !important;
+}
+
+.close, .close:hover, .close:focus, .close:active {
+	color: white;
+}
+
+.ttip {
+	position: relative;
+}
+
+.ttip .ttip-text {
+	visibility: hidden;
+	padding: 0.1rem 1rem;
+	position: absolute;
+	left: 125%;
+	z-index: 1000;
+	border-radius: 6px;
+	background-color: rgba(0, 0, 0, 0.31);
+	text-align: center;
+	line-height: 1.5;
+	font-size: medium;
+	font-weight: normal;
+	color: white;
+}
+
+.ttip:hover .ttip-text {
+	visibility: visible;
 }

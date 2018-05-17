@@ -22,11 +22,6 @@
     color: orangered;
 }
 
-[type=submit], [type=submit]:hover {
-    background-color: var(--nice-orange);
-    border-color: orangered;
-}
-
 input:focus {
     outline: none !important;
     border-color: var(--nice-orange) !important;

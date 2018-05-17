@@ -1,43 +1,67 @@
 
 .name {
-    text-align: center;
-    font-variant: small-caps;
-    font-size: xx-large;
-    color: #d4dcbe;
+	text-align: center;
+	font-variant: small-caps;
+	font-size: xx-large;
+	color: #D4DCBE;
 }
 
 .classes {
-    width: 75%;
-    margin-left: auto;
-    margin-right: auto;
-    border-collapse: collapse;
-    color: #f8f9fa;
+	width: 75%;
+	margin-left: auto;
+	margin-right: auto;
+	border-collapse: collapse;
+	color: #F8F9FA;
 }
 
 .classes th {
-    color: #bccacb;
+	color: #BCCACB;
 }
 
-.classes td, .classes th {
-    text-align: center;
+.classes {
+	text-align: center;
 }
 
 .classes th:nth-child(1), .classes td:nth-child(1) {
-    width: 12.3%;
+	width: 12.3%;
 }
 
 .classes th:nth-child(2), .classes td:nth-child(2), .classes th:nth-child(11), .classes td:nth-child(11), .classes th:nth-child(3), .classes td:nth-child(3) {
-    width: 15%;
+	width: 15%;
 }
 
 .classes th:nth-child(3), .classes td:nth-child(3), .classes th:nth-child(5), .classes td:nth-child(5), .classes th:nth-child(6), .classes td:nth-child(6), .classes th:nth-child(7), .classes td:nth-child(7) {
-    width: 4.1%;
+	width: 4.1%;
 }
 
 .classes th:nth-child(8), .classes td:nth-child(8) {
-    width: 9.6%
+	width: 9.6%
 }
 
 .classes th:nth-child(9), .classes td:nth-child(9), .classes th:nth-child(10), .classes td:nth-child(10) {
-    width: 8.2%;
+	width: 8.2%;
 }
+
+.classes td:nth-child(11) {
+	width: 1%;
+}
+
+#add-class-form {
+	width: 75%;
+	margin-left: auto;
+	margin-right: auto;
+}
+
+.center {
+	display: flex;
+}
+
+.custom-select {
+	width: initial;
+}
+
+.center * {
+	flex: 1;
+	margin: 1rem;
+}
+

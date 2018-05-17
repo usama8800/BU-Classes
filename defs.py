@@ -11,7 +11,7 @@ import requests
 from bs4 import BeautifulSoup
 
 main_url = "https://www.bu.edu/link/bin/uiscgi_studentlink.pl/uismpl/1204835367?ModuleName=univschs.pl"
-search_url = "https://www.bu.edu/link/bin/uiscgi_studentlink.pl/1510675812?ModuleName=univschr.pl&SearchOptionDesc=Class+Number&SearchOptionCd=S&KeySem=%s&ViewSem=%s&College=%s&Dept=%s&Course=%s&Section=%s&MainCampusInd=%s"
+search_url = "https://www.bu.edu/link/bin/uiscgi_studentlink.pl/1510675812?ModuleName=univschr.pl&SearchOptionDesc=Class+Number&SearchOptionCd=S&KeySem=%s&College=%s&Dept=%s&Course=%s&Section=%s&MainCampusInd=%s"
 indexes = {'Class': 0, 'Title': 1, 'Credits': 3, 'Type': 4, 'Seats': 5, 'Building': 6, 'Room': 7, 'Day': 8, 'Start': 9, 'Stop': 10, 'Notes': 11}
 
 
@@ -26,13 +26,23 @@ def get(record, index, i=-1):
 
 
 def search_classes(class_info, verbose=True):
-	section = class_info[5]
+	"""
+	:param class_info: SemCode, College, Dept, Course, Section
+	:param verbose:
+	"""
+	section = class_info[4]
 	crco = 'N'
 	data = []
 	while True:
 		info = []
-		custom_url = search_url % (class_info[0], class_info[1], class_info[2], class_info[3], class_info[4], section, crco)  # Create the custom URL with the user values
-		soup = BeautifulSoup(str(requests.get(custom_url).text), "html.parser")  # Get the text from the URL and parse it
+		custom_url = search_url % (class_info[0], class_info[1], class_info[2], class_info[3], section, crco)  # Create the custom URL with the user values
+		try:
+			# raise IndexError
+			soup = BeautifulSoup(str(requests.get(custom_url).text), "html.parser")  # Get the text from the URL and parse it
+		except requests.exceptions.ConnectionError:
+			raise IndexError
+		except IndexError:
+			return [[[class_info[1] + ' ' + class_info[2] + class_info[3] + ' ' + class_info[4]], [class_info[4] + ' Title'], None, ['4.0'], ['Lecture'], ['42'], ['CAS'], ['B23'], ['Wed'], ['8:15 am'], ['9:05 am'], ['']]]
 		if len(soup.find_all('table')) < 6:
 			print(soup)
 			break
@@ -53,10 +63,12 @@ def search_classes(class_info, verbose=True):
 		done = True
 		for record in data:
 			cls = get(record, 'Class')  # Get the class - CAS CS112 A1
-			if (class_info[3] not in cls or class_info[4] not in cls or (class_info[5] != '' and class_info[5] not in cls[-2:])) and cls != 'Class':
+			if (class_info[2] not in cls or class_info[3] not in cls or (class_info[4] != '' and class_info[4] not in cls[-2:])) and cls != 'Class':
 				done = True
 			else:
 				done = False
+				if get(record, 'Class') == 'Class':
+					continue
 				if not verbose:  # Filter out rows with 0 classes if set to it
 					if get(record, 'Seats') != '0':
 						info.append(record)
@@ -70,30 +82,76 @@ def search_classes(class_info, verbose=True):
 
 
 def get_classes(username, password):
+	"""
+	:param username: string
+	:param password: salted password
+	"""
 	user = get_user(username)
 	if not user:
 		return {'error': {'user': 'User not found'}}
-	if not check_password(user, password):
+	if not verify_user(username, password):
 		return {'error': {'pass': 'Invalid password'}}
 	
 	conn = sqlite3.connect('sqldatabase.db')
 	c = conn.cursor()
 	c.execute('SELECT * FROM classes WHERE user=?', (user[0],))
-	records = [record[2:9] for record in c.fetchall()]
+	records = c.fetchall()
 	conn.close()
 	classes = []
 	for record in records:
 		if record[-1] == 1:
 			continue
-		classes += search_classes(record)
+		searched = search_classes(record[2:-1])
+		for cls in searched:
+			cls.append(record[0])
+		classes += searched
 	return {'classes': classes, 'name': user[1], 'error': False}
 
 
 def check_password(user, password):
+	"""
+	Checks if password matches
+	:param user: user object from sql
+	:param password: unhashed string
+	"""
 	return user[2] == sha3(password + str(user[3]))
 
 
+def get_salted_hash(username, password):
+	"""
+	Returns a hash salted with users salt
+	:param username: string
+	:param password: unhashed string
+	"""
+	conn = sqlite3.connect('sqldatabase.db')
+	c = conn.cursor()
+	c.execute('SELECT * FROM users WHERE username=?', (username,))
+	user = c.fetchone()
+	conn.close()
+	if user:
+		return sha3(password + str(user[3]))
+
+
+def verify_user(username, password):
+	"""
+	Checks username and hash given with username and salted hashed password in database
+	:param username: string
+	:param password: salted hashed password
+	"""
+	conn = sqlite3.connect('sqldatabase.db')
+	c = conn.cursor()
+	c.execute('SELECT * FROM users WHERE username=?', (username,))
+	user = c.fetchone()
+	conn.close()
+	if user:
+		return password == user[2]
+
+
 def get_user(username):
+	"""
+	:param username: string
+	:return: user object from sql
+	"""
 	conn = sqlite3.connect('sqldatabase.db')
 	c = conn.cursor()
 	c.execute('SELECT * FROM users WHERE username=?', (username,))
@@ -103,6 +161,11 @@ def get_user(username):
 
 
 def get_activation(code):
+	"""
+	Returns if activation code found in database when user clicks on activation link in email
+	:param code: activation hash
+	:return: sql object
+	"""
 	conn = sqlite3.connect('sqldatabase.db')
 	c = conn.cursor()
 	c.execute('SELECT * FROM activations WHERE code=?', (code,))
@@ -112,6 +175,10 @@ def get_activation(code):
 
 
 def exists_activation(username):
+	"""
+	:param username: string
+	:return: whether there is an activation for a user in the database
+	"""
 	conn = sqlite3.connect('sqldatabase.db')
 	c = conn.cursor()
 	c.execute('SELECT * FROM activations WHERE user=?', (username,))
@@ -121,6 +188,12 @@ def exists_activation(username):
 
 
 def create_user(username, name, password):
+	"""
+	Creates a new user in the database with fields (username, name, salted password. salt)
+	:param username: string
+	:param name: string
+	:param password: string
+	"""
 	print('Creating user', username, name, password)
 	conn = sqlite3.connect('sqldatabase.db')
 	c = conn.cursor()
@@ -132,6 +205,11 @@ def create_user(username, name, password):
 
 
 def update_password(username, password):
+	"""
+	Updates salt and salted password
+	:param username: string
+	:param password: string
+	"""
 	conn = sqlite3.connect('sqldatabase.db')
 	c = conn.cursor()
 	salt = random.randint(0, 1000000)
@@ -142,6 +220,10 @@ def update_password(username, password):
 
 
 def remove_activation(username):
+	"""
+	Removes all activations by a username
+	:param username: strinig
+	"""
 	conn = sqlite3.connect('sqldatabase.db')
 	c = conn.cursor()
 	c.execute('DELETE FROM activations WHERE user=?', (username,))
@@ -150,6 +232,12 @@ def remove_activation(username):
 
 
 def add_activation(username):
+	"""
+	If activation from user exists, updates the time and code.
+	Else makes a new activation with fields (username, code, timestamp)
+	:param username: string
+	:return code generated (sha3 of username + random int 0-1000
+	"""
 	conn = sqlite3.connect('sqldatabase.db')
 	c = conn.cursor()
 	code = sha3(username + str(random.randint(0, 1000)))
@@ -184,6 +272,30 @@ def sha3(msg):
 	s = hashlib.sha3_512()
 	s.update(msg.encode())
 	return s.hexdigest()
+
+
+def insert_class(username, data):
+	conn = sqlite3.connect('sqldatabase.db')
+	c = conn.cursor()
+	
+	classes = search_classes([data['semester'], data['college'], data['department'], data['course'], data['section']])
+	for cls in classes:
+		section = get(cls, 'Class')[4:]
+		section = section[section.index(' ') + 1:]
+		c.execute('SELECT * FROM classes WHERE user=? AND semester_code=? AND college=? AND department=? AND course=? And section=?', (username, data['semester'], data['college'], data['department'], data['course'], section,))
+		if not c.fetchone():
+			c.execute('INSERT INTO classes VALUES (NULL, ?, ?, ?, ?, ?, ?, 0)', (username, data['semester'], data['college'], data['department'], data['course'], section,))
+	conn.commit()
+	conn.close()
+
+
+def delete_class(class_ids):
+	conn = sqlite3.connect('sqldatabase.db')
+	c = conn.cursor()
+	for class_id in class_ids:
+		c.execute('DELETE FROM classes WHERE id=?', (class_id,))
+	conn.commit()
+	conn.close()
 
 
 if __name__ == "__main__":
