@@ -1,20 +1,25 @@
 import hashlib
 import random
-import smtplib
 import sqlite3
 import time
 import unicodedata
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
 from os import path
 
 import requests
+import sendgrid
 from bs4 import BeautifulSoup
+from sendgrid.helpers.mail import *
 
 main_url = "https://www.bu.edu/link/bin/uiscgi_studentlink.pl/uismpl/1204835367?ModuleName=univschs.pl"
 search_url = "https://www.bu.edu/link/bin/uiscgi_studentlink.pl/1510675812?ModuleName=univschr.pl&SearchOptionDesc=Class+Number&SearchOptionCd=S&KeySem=%s&College=%s&Dept=%s&Course=%s&Section=%s&MainCampusInd=%s"
 indexes = {'Class': 0, 'Title': 1, 'Credits': 3, 'Type': 4, 'Seats': 5, 'Building': 6, 'Room': 7, 'Day': 8, 'Start': 9, 'Stop': 10, 'Notes': 11}
 ROOT = path.dirname(path.realpath(__file__))
+
+
+def log(arg=''):
+	print(arg)
+	with open('log.txt', 'a') as f:
+		f.write(arg + '\n')
 
 
 def get(record, index, i=-1):
@@ -252,20 +257,16 @@ def add_activation(username):
 
 
 def send_activation_email(username, link):
-	fromaddr = "usama8800@gmail.com"
-	toaddr = '%s@bu.edu' % username
-	server = smtplib.SMTP('smtp.gmail.com', 587)
-	server.ehlo()
-	server.starttls()
-	server.ehlo()
-	server.login(fromaddr, "nqfkaexanhjlbwcw")
-	msg = MIMEMultipart()
-	msg['From'] = ''
-	msg['To'] = toaddr
-	msg['Subject'] = 'Setup email for BU Classes'
-	body = '<a href="%s">Click here</a> to set your password<br><br>OR<br><br>Copy this link in your browser:<br>%s' % (link, link)
-	msg.attach(MIMEText(body, 'html'))
-	server.sendmail(fromaddr, toaddr, msg.as_string())
+	sg = sendgrid.SendGridAPIClient(apikey = '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')
+	from_email = Email("buclasses@no-reply.com")
+	to_email = Email('%s@bu.edu' % username)
+	subject = "Setup email for BU Classes"
+	email_content = Content("text/html", '<a href="%s">Click here</a> to set your password<br><br>OR<br><br>Copy this link in your browser:<br>%s' % (link, link))
+	my_mail = Mail(from_email, subject, to_email, email_content)
+	response = sg.client.mail.send.post(request_body = my_mail.get())
+	print(response.status_code)
+	print(response.body)
+	print(response.headers)
 
 
 def sha3(msg):
@@ -304,15 +305,37 @@ if __name__ == "__main__":
 	
 	cur.execute('SELECT * FROM classes')
 	records = cur.fetchall()
-	con.close()
 	
-	classes = []
-	for record in records:
-		if record[-1] == 1:
+	# classes = []
+	# for record in records:
+	# 	if record[-1] == 1:
+	# 		continue
+	# 	searched = search_classes(record[2:-1])
+	# 	for cls in searched:
+	# 		cls.append(record[0])
+	# 	classes += searched
+	classes = [[['CAS CH203 B0'], ['Organic Chem 1', 'Loy'], [], ['0.0'], ['Discussion'], ['0'], ['BRB'], ['122'], ['Mon'], ['9:05am'], ['9:55am'], ['Class Full'], 32], [['CAS CS111 A2'], ['Int Comp Sci 1', 'Sullivan'], [], ['0.0'], ['Lab'], ['1'], ['CAS'], ['116'], ['Mon'], ['1:25pm'], ['2:15pm'], ['Class Full'], 33]]
+	
+	for i, cls in enumerate(classes):
+		seats = get(cls, 'Seats')[0]
+		if get(cls, 'Class') == 'Class':
 			continue
-		searched = search_classes(record[2:-1])
-		for cls in searched:
-			cls.append(record[0])
-		classes += searched
-	
-	print()
+		
+		if seats == '0':
+			log('No seats free in %s' % get(cls, 'Class'))
+		else:
+			log('********** %s Open **********' % get(cls, 'Class'))
+			sg = sendgrid.SendGridAPIClient(apikey = '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')
+			from_email = Email("buclasses@no-reply.com")
+			to_email = Email('%s@bu.edu' % records[i][1])
+			print('%s@bu.edu' % records[i][1])
+			pass
+			subject = 'Someone left %s!' % get(cls, 'Class')
+			email_content = Content("text/html", '%s has now %s %s left<br><h5>Hurry up and join!</h5>' % (get(cls, 'Class'), seats, 'seat' if seats == '1' else 'seats'))
+			my_mail = Mail(from_email, subject, to_email, email_content)
+			response = sg.client.mail.send.post(request_body = my_mail.get())
+			print(response.status_code)
+			print(response.body)
+			print(response.headers)
+			cur.execute('UPDATE classes SET hold=1 WHERE user=?', (records[i][1],))
+	cur.close()

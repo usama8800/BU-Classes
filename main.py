@@ -12,10 +12,9 @@ from bs4 import BeautifulSoup
 
 main_url = "https://www.bu.edu/link/bin/uiscgi_studentlink.pl/uismpl/1204835367?ModuleName=univschs.pl"
 search_url = "https://www.bu.edu/link/bin/uiscgi_studentlink.pl/1510675812?ModuleName=univschr.pl&SearchOptionDesc" \
-			 "=Class+Number&SearchOptionCd=S&KeySem=%s&ViewSem=%s&College=%s&Dept=%s&Course=%s&Section=%s" \
-			 "&MainCampusInd=%s"
-indexes = {'Class': 0, 'Title': 1, 'Credits': 3, 'Type': 4, 'Seats': 5, 'Building': 6, 'Room': 7, 'Day': 8, 'Start': 9,
-		   'Stop': 10, 'Notes': 11}
+             "=Class+Number&SearchOptionCd=S&KeySem=%s&ViewSem=%s&College=%s&Dept=%s&Course=%s&Section=%s" \
+             "&MainCampusInd=%s"
+indexes = {'Class': 0, 'Title': 1, 'Credits': 3, 'Type': 4, 'Seats': 5, 'Building': 6, 'Room': 7, 'Day': 8, 'Start': 9, 'Stop': 10, 'Notes': 11}
 
 
 def log(arg=''):
@@ -40,36 +39,29 @@ def search_classes(class_info, verbose=True):
 	data = []
 	while True:
 		info = []
-		custom_url = search_url % (
-			class_info[0][0], class_info[0][1], class_info[1], class_info[2], class_info[3], section,
-			crco)  # Create the custom URL with the user values
-		soup = BeautifulSoup(str(requests.get(custom_url).text),
-			"html.parser")  # Get the text from the URL and parse it
+		custom_url = search_url % (class_info[0][0], class_info[0][1], class_info[1], class_info[2], class_info[3], section, crco)  # Create the custom URL with the user values
+		soup = BeautifulSoup(str(requests.get(custom_url).text), "html.parser")  # Get the text from the URL and parse it
 		if len(soup.find_all('table')) < 6:
 			print(soup)
 			break
-		soup = BeautifulSoup(str(soup.find_all('table')[5]),
-			"html.parser")  # Parse the 6th table which contains the class list
+		soup = BeautifulSoup(str(soup.find_all('table')[5]), "html.parser")  # Parse the 6th table which contains the class list
 		for i, tr in enumerate(soup.find_all('tr')):
 			record = []
 			for j, td in enumerate(tr.find_all(['td', 'th'])):
 				if j == 0:  # First item is always empty
 					continue
-				td = str(td.get_text(separator = ';',
-					strip = True))  # gets the text with ; in between if there is more than one line
+				td = str(td.get_text(separator = ';', strip = True))  # gets the text with ; in between if there is more than one line
 				td = unicodedata.normalize("NFKD", td)  # Convert the unicode characters to utf-8
 				td = td.split(';')  # Split the td into lines
 				td = [item for item in td if str(item)]  # Get rid of empty strings
 				record.append(td)  # Add field to record
-			if len(record) == 12 and (
-					i != 0 or section == ''):  # Don't add the rows which are not classes and don't add the header row
+			if len(record) == 12 and (i != 0 or section == ''):  # Don't add the rows which are not classes and don't add the header row
 				#  for second page
 				data.append(record)  # Checks if we need to go to the next page for more classes and filter the classes
 		done = True
 		for record in data:
 			cls = get(record, 'Class')  # Get the class - CAS CS112 A1
-			if (class_info[2] not in cls or class_info[3] not in cls or (
-					class_info[4] != '' and class_info[4] not in cls[-2:])) and cls != 'Class':
+			if (class_info[2] not in cls or class_info[3] not in cls or (class_info[4] != '' and class_info[4] not in cls[-2:])) and cls != 'Class':
 				done = True
 			else:
 				done = False
@@ -97,10 +89,7 @@ def print_classes(classes):
 		
 		# pretty print
 		for i in range(max_len):
-			print('%12s  %15s  %3s  %22s  %5s  %3s  %4s  %15s  %7s  %7s  %15s' % (
-				get(cls, 'Class', i), get(cls, 'Title', i), get(cls, 'Credits', i), get(cls, 'Type', i),
-				get(cls, 'Seats', i), get(cls, 'Building', i), get(cls, 'Room', i), get(cls, 'Day', i),
-				get(cls, 'Start', i), get(cls, 'Stop', i), get(cls, 'Notes', i)))
+			print('%12s  %15s  %3s  %22s  %5s  %3s  %4s  %15s  %7s  %7s  %15s' % (get(cls, 'Class', i), get(cls, 'Title', i), get(cls, 'Credits', i), get(cls, 'Type', i), get(cls, 'Seats', i), get(cls, 'Building', i), get(cls, 'Room', i), get(cls, 'Day', i), get(cls, 'Start', i), get(cls, 'Stop', i), get(cls, 'Notes', i)))
 
 
 def read_file():
@@ -211,8 +200,7 @@ def menu():
 
 
 def main():
-	log('%s\nRunning on %s\n%s' % (
-		'-' * 30, datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S'), '-' * 30))
+	log('%s\nRunning on %s\n%s' % ('-' * 30, datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S'), '-' * 30))
 	file = open('classes.txt', 'r')
 	dels = []
 	
@@ -238,8 +226,7 @@ def main():
 				msg['From'] = fromaddr
 				msg['To'] = toaddr
 				msg['Subject'] = 'Someone left %s!' % get(cls, 'Class')
-				body = '%s has now %s %s left<br><h5>Hurry up and join!</h5>' % (
-					get(cls, 'Class'), seats, 'seat' if seats == '1' else 'seats')
+				body = '%s has now %s %s left<br><h5>Hurry up and join!</h5>' % (get(cls, 'Class'), seats, 'seat' if seats == '1' else 'seats')
 				msg.attach(MIMEText(body, 'html'))
 				if toaddr != '':
 					server.sendmail(fromaddr, toaddr, msg.as_string())
