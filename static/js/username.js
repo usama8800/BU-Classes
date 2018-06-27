@@ -3,7 +3,7 @@ $(main);
 function main() {
     $('input[type=text]').on('input', makeCap);
     $('#remove-button').click(removeButtonClicked);
-    debug()
+    // debug()
 }
 
 function removeButtonClicked() {
@@ -16,7 +16,7 @@ function makeCap() {
 
 function debug() {
     $('[value=20193]').attr('selected', '');
-    $('[value=CAS]').attr('selected', '')
+    $('[value=CAS]').attr('selected', '');
     $('[name=department]').val('CS');
     $('[name=course]').val('237');
 }
