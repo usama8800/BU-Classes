@@ -306,15 +306,15 @@ if __name__ == "__main__":
 	cur.execute('SELECT * FROM classes')
 	records = cur.fetchall()
 	
-	# classes = []
-	# for record in records:
-	# 	if record[-1] == 1:
-	# 		continue
-	# 	searched = search_classes(record[2:-1])
-	# 	for cls in searched:
-	# 		cls.append(record[0])
-	# 	classes += searched
-	classes = [[['CAS CH203 B0'], ['Organic Chem 1', 'Loy'], [], ['0.0'], ['Discussion'], ['0'], ['BRB'], ['122'], ['Mon'], ['9:05am'], ['9:55am'], ['Class Full'], 32], [['CAS CS111 A2'], ['Int Comp Sci 1', 'Sullivan'], [], ['0.0'], ['Lab'], ['1'], ['CAS'], ['116'], ['Mon'], ['1:25pm'], ['2:15pm'], ['Class Full'], 33]]
+	classes = []
+	for record in records:
+		if record[-1] == 1:
+			continue
+		searched = search_classes(record[2:-1])
+		for cls in searched:
+			cls.append(record[0])
+		classes += searched
+	# classes = [[['CAS CH203 B0'], ['Organic Chem 1', 'Loy'], [], ['0.0'], ['Discussion'], ['0'], ['BRB'], ['122'], ['Mon'], ['9:05am'], ['9:55am'], ['Class Full'], 32], [['CAS CS111 A2'], ['Int Comp Sci 1', 'Sullivan'], [], ['0.0'], ['Lab'], ['1'], ['CAS'], ['116'], ['Mon'], ['1:25pm'], ['2:15pm'], ['Class Full'], 33]]
 	
 	for i, cls in enumerate(classes):
 		seats = get(cls, 'Seats')[0]
